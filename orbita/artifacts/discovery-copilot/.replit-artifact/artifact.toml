@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Transport Discovery Copilot"
+description = "An internal discovery workspace for transport strategy teams to run structured stakeholder sessions, capture evidence, map operational processes, and prioritize agentic opportunities across a large national fleet."
+version = "1.0.0"
+id = "artifacts/discovery-copilot"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23063
+
+[services.development]
+run = "pnpm --filter @workspace/discovery-copilot run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/discovery-copilot", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/discovery-copilot/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23063"
+BASE_PATH = "/"

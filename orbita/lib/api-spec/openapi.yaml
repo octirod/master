@@ -1,0 +1,693 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: |
+    API specification for the internal ÓRBITA discovery workspace.
+    All operations except health require an authenticated Clerk session cookie.
+    Workspace roles are assigned in trusted Clerk public metadata under
+    `workspaceRole`: `read_only`, `contributor`, `facilitator`, `editor`, or
+    `administrator`. Unknown or missing roles fail closed to `read_only`.
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: discovery
+    description: Discovery workspace operations
+  - name: access
+    description: Workspace identity and role administration
+security:
+  - clerkSession: []
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      security: []
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /access/me:
+    get:
+      operationId: getCurrentAccess
+      tags: [access]
+      summary: Get the signed-in user's workspace access
+      responses:
+        "200":
+          description: Current workspace access
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentAccess"
+  /users:
+    get:
+      operationId: getWorkspaceUsers
+      tags: [access]
+      summary: List workspace users and their roles
+      description: Administrator access required.
+      responses:
+        "200":
+          description: Workspace users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkspaceUser"
+        "403":
+          description: Administrator role required
+  /users/{id}/role:
+    patch:
+      operationId: updateWorkspaceUserRole
+      tags: [access]
+      summary: Change a workspace user's role
+      description: Administrator access required. The final administrator cannot be demoted.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkspaceRoleUpdate"
+      responses:
+        "200":
+          description: Updated workspace user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkspaceUser"
+        "400":
+          description: Invalid role update
+        "403":
+          description: Administrator role required
+        "404":
+          description: User not found
+        "409":
+          description: The final administrator cannot be demoted
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [discovery]
+      summary: Get discovery dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /sessions:
+    get:
+      operationId: getSessions
+      tags: [discovery]
+      summary: List discovery sessions
+      responses:
+        "200":
+          description: Discovery sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DiscoverySession"
+    post:
+      operationId: createSession
+      tags: [discovery]
+      summary: Create a discovery session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionInput"
+      responses:
+        "201":
+          description: Created discovery session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoverySession"
+  /sessions/{id}:
+    patch:
+      operationId: updateSession
+      tags: [discovery]
+      summary: Update a discovery session
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionUpdate"
+      responses:
+        "200":
+          description: Updated discovery session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiscoverySession"
+        "404":
+          description: Session not found
+  /stakeholders:
+    get:
+      operationId: getStakeholders
+      tags: [discovery]
+      summary: List stakeholders for the power map
+      responses:
+        "200":
+          description: Stakeholder power map
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Stakeholder"
+    post:
+      operationId: createStakeholder
+      tags: [discovery]
+      summary: Add a stakeholder to the power map
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StakeholderInput"
+      responses:
+        "201":
+          description: Created stakeholder
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stakeholder"
+  /stakeholders/{id}:
+    patch:
+      operationId: updateStakeholder
+      tags: [discovery]
+      summary: Update a stakeholder power-map record
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StakeholderUpdate"
+      responses:
+        "200":
+          description: Updated stakeholder
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stakeholder"
+        "404":
+          description: Stakeholder not found
+  /opportunities:
+    get:
+      operationId: getOpportunities
+      tags: [discovery]
+      summary: List agent opportunities
+      responses:
+        "200":
+          description: Agent opportunity backlog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Opportunity"
+    post:
+      operationId: createOpportunity
+      tags: [discovery]
+      summary: Create an agent opportunity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OpportunityInput"
+      responses:
+        "201":
+          description: Created agent opportunity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Opportunity"
+  /opportunities/{id}:
+    patch:
+      operationId: updateOpportunity
+      tags: [discovery]
+      summary: Update an agent opportunity
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OpportunityUpdate"
+      responses:
+        "200":
+          description: Updated agent opportunity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Opportunity"
+        "404":
+          description: Opportunity not found
+  /evidence:
+    get:
+      operationId: getEvidence
+      tags: [discovery]
+      summary: List evidence items
+      responses:
+        "200":
+          description: Evidence items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Evidence"
+  /activity:
+    get:
+      operationId: getActivity
+      tags: [discovery]
+      summary: List recent workspace activity
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Activity"
+  /privacy/audit:
+    get:
+      operationId: getPrivacyAudit
+      tags: [discovery]
+      summary: Read append-only audit events
+      description: Privacy administrators only. Events contain redacted change summaries.
+      responses:
+        "200":
+          description: Audit events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditEventsResponse"
+        "403":
+          description: Administrator role required
+  /privacy/export:
+    post:
+      operationId: exportPrivacyData
+      tags: [discovery]
+      summary: Export a scoped discovery data set
+      description: Privacy administrators only. The response is not persisted by the API.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrivacyExportRequest"
+      responses:
+        "200":
+          description: Scoped export
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivacyExportResponse"
+        "403":
+          description: Administrator role required
+  /privacy/delete:
+    post:
+      operationId: deletePrivacyData
+      tags: [discovery]
+      summary: Delete one authorized discovery record
+      description: Privacy administrators only. The deletion and outcome are audit logged.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrivacyDeletionRequest"
+      responses:
+        "200":
+          description: Record deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivacyDeletionResponse"
+        "403":
+          description: Administrator role required
+        "404":
+          description: Record not found
+  /proposal:
+    get:
+      operationId: getProposalStrategy
+      tags: [discovery]
+      summary: Get the source-backed ÓRBITA proposal strategy
+      responses:
+        "200":
+          description: Proposal strategy, goals, agents, and timeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProposalStrategy"
+  /proposal/phases/{id}:
+    patch:
+      operationId: updateProposalPhase
+      tags: [discovery]
+      summary: Update progress for a proposal phase
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProposalPhaseUpdate"
+      responses:
+        "200":
+          description: Updated proposal phase
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProposalPhase"
+        "404":
+          description: Proposal phase not found
+components:
+  securitySchemes:
+    clerkSession:
+      type: apiKey
+      in: cookie
+      name: __session
+      description: Clerk browser session cookie for an individually signed-in team member.
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    WorkspaceRole:
+      type: string
+      enum: [read_only, contributor, facilitator, editor, administrator]
+    CurrentAccess:
+      type: object
+      required: [id, role]
+      properties:
+        id: { type: string }
+        role:
+          $ref: "#/components/schemas/WorkspaceRole"
+    WorkspaceUser:
+      type: object
+      required: [id, name, email, emailVerified, role, status, createdAt, lastActiveAt, isCurrentUser]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        emailVerified: { type: boolean }
+        role:
+          $ref: "#/components/schemas/WorkspaceRole"
+        status: { type: string, enum: [active, locked, banned] }
+        createdAt: { type: string, format: date-time }
+        lastActiveAt: { type: ["string", "null"], format: date-time }
+        isCurrentUser: { type: boolean }
+    WorkspaceRoleUpdate:
+      type: object
+      required: [role]
+      properties:
+        role:
+          $ref: "#/components/schemas/WorkspaceRole"
+    DashboardSummary:
+      type: object
+      required: [clientName, fleetSize, monthlyTrips, phase, daysRemaining, sessionsCompleted, sessionsTotal, evidenceItems, opportunities, highPriority, progress]
+      properties:
+        clientName: { type: string }
+        fleetSize: { type: number }
+        monthlyTrips: { type: number }
+        phase: { type: string }
+        daysRemaining: { type: number }
+        sessionsCompleted: { type: number }
+        sessionsTotal: { type: number }
+        evidenceItems: { type: number }
+        opportunities: { type: number }
+        highPriority: { type: number }
+        progress: { type: number }
+    DiscoverySession:
+      type: object
+      required: [id, title, stakeholder, role, track, status, scheduledAt, summary, questionCount, evidenceCount]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        stakeholder: { type: string }
+        role: { type: string }
+        track: { type: string }
+        status: { type: string, enum: [planned, in_progress, completed] }
+        scheduledAt: { type: string }
+        completedAt: { type: ["string", "null"] }
+        summary: { type: string }
+        questionCount: { type: number }
+        evidenceCount: { type: number }
+    SessionInput:
+      type: object
+      required: [title, stakeholder, role, track, scheduledAt]
+      properties:
+        title: { type: string, minLength: 1 }
+        stakeholder: { type: string, minLength: 1 }
+        role: { type: string, minLength: 1 }
+        track: { type: string, minLength: 1 }
+        scheduledAt: { type: string, minLength: 1 }
+    SessionUpdate:
+      type: object
+      properties:
+        title: { type: string, minLength: 1 }
+        status: { type: string, enum: [planned, in_progress, completed] }
+        summary: { type: string }
+        scheduledAt: { type: string }
+    Stakeholder:
+      type: object
+      required: [id, name, organization, role, keyPoints, power, interest, stance, confidence]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        organization: { type: string }
+        role: { type: string }
+        keyPoints: { type: string }
+        power: { type: number, minimum: 1, maximum: 5 }
+        interest: { type: number, minimum: 1, maximum: 5 }
+        stance: { type: string, enum: [champion, supportive, neutral, cautious, resistant] }
+        confidence: { type: string, enum: [confirmed, working_hypothesis, needs_validation] }
+    StakeholderInput:
+      type: object
+      required: [name, organization, role, keyPoints, power, interest, stance]
+      properties:
+        name: { type: string, minLength: 1 }
+        organization: { type: string, minLength: 1 }
+        role: { type: string, minLength: 1 }
+        keyPoints: { type: string }
+        power: { type: number, minimum: 1, maximum: 5 }
+        interest: { type: number, minimum: 1, maximum: 5 }
+        stance: { type: string, enum: [champion, supportive, neutral, cautious, resistant] }
+        confidence: { type: string, enum: [confirmed, working_hypothesis, needs_validation] }
+    StakeholderUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        organization: { type: string, minLength: 1 }
+        role: { type: string, minLength: 1 }
+        keyPoints: { type: string }
+        power: { type: number, minimum: 1, maximum: 5 }
+        interest: { type: number, minimum: 1, maximum: 5 }
+        stance: { type: string, enum: [champion, supportive, neutral, cautious, resistant] }
+        confidence: { type: string, enum: [confirmed, working_hypothesis, needs_validation] }
+    Opportunity:
+      type: object
+      required: [id, name, area, description, score, priority, status, confidence, owner, impact, feasibility, dataReadiness, risk, sourceCount]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        area: { type: string }
+        description: { type: string }
+        score: { type: number }
+        priority: { type: string, enum: [high, medium, watch] }
+        status: { type: string, enum: [shortlist, validate, parked, pilot] }
+        confidence: { type: number }
+        owner: { type: string }
+        impact: { type: number }
+        feasibility: { type: number }
+        dataReadiness: { type: number }
+        risk: { type: number }
+        sourceCount: { type: number }
+    OpportunityInput:
+      type: object
+      required: [name, area, description, owner]
+      properties:
+        name: { type: string, minLength: 1 }
+        area: { type: string, minLength: 1 }
+        description: { type: string, minLength: 1 }
+        owner: { type: string, minLength: 1 }
+    OpportunityUpdate:
+      type: object
+      properties:
+        priority: { type: string, enum: [high, medium, watch] }
+        status: { type: string, enum: [shortlist, validate, parked, pilot] }
+        confidence: { type: number }
+        owner: { type: string }
+    Evidence:
+      type: object
+      required: [id, label, detail, type, source, confidence, sessionId]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        detail: { type: string }
+        type: { type: string, enum: [fact, signal, assumption, question] }
+        source: { type: string }
+        confidence: { type: number }
+        sessionId: { type: ["string", "null"] }
+    Activity:
+      type: object
+      required: [id, text, time, kind]
+      properties:
+        id: { type: string }
+        text: { type: string }
+        time: { type: string }
+        kind: { type: string, enum: [session, evidence, opportunity, system] }
+    AuditChangeSummary:
+      type: object
+      required: [changedFields]
+      properties:
+        changedFields:
+          type: array
+          items: { type: string }
+        before: { type: object, additionalProperties: true }
+        after: { type: object, additionalProperties: true }
+        reason: { type: string }
+    AuditEvent:
+      type: object
+      required: [id, actorId, actorRole, action, targetType, targetId, occurredAt, requestId, outcome, changeSummary]
+      properties:
+        id: { type: string }
+        actorId: { type: string }
+        actorRole: { type: string }
+        action: { type: string }
+        targetType: { type: string }
+        targetId: { type: string }
+        occurredAt: { type: string, format: date-time }
+        requestId: { type: string }
+        outcome: { type: string }
+        changeSummary:
+          $ref: "#/components/schemas/AuditChangeSummary"
+    AuditEventsResponse:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditEvent"
+    PrivacyExportRequest:
+      type: object
+      required: [scope]
+      properties:
+        scope: { type: string, enum: [source_notes, derived_evidence, all] }
+    PrivacyExportResponse:
+      type: object
+      required: [scope, exportedAt, recordCounts, data]
+      properties:
+        scope: { type: string }
+        exportedAt: { type: string, format: date-time }
+        recordCounts: { type: object, additionalProperties: { type: number } }
+        data: { type: object, additionalProperties: true }
+    PrivacyDeletionRequest:
+      type: object
+      required: [targetType, targetId, reason]
+      properties:
+        targetType: { type: string, enum: [session, stakeholder, opportunity, evidence, proposal_phase] }
+        targetId: { type: string, minLength: 1 }
+        reason: { type: string, minLength: 1, maxLength: 500 }
+    PrivacyDeletionResponse:
+      type: object
+      required: [targetType, targetId, deletedCount]
+      properties:
+        targetType: { type: string }
+        targetId: { type: string }
+        deletedCount: { type: number }
+    ProposalGoal:
+      type: object
+      required: [id, title, description, successSignal]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        successSignal: { type: string }
+    ProposalAgent:
+      type: object
+      required: [id, name, mission, impact]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        mission: { type: string }
+        impact: { type: string }
+    ProposalPhase:
+      type: object
+      required: [id, name, window, budgetUf, objective, status, progress]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        window: { type: string }
+        budgetUf: { type: number }
+        objective: { type: string }
+        status: { type: string, enum: [not_started, active, at_risk, completed] }
+        progress: { type: number, minimum: 0, maximum: 100 }
+        deadline: { type: ["string", "null"] }
+    ProposalPhaseUpdate:
+      type: object
+      properties:
+        status: { type: string, enum: [not_started, active, at_risk, completed] }
+        progress: { type: number, minimum: 0, maximum: 100 }
+    ProposalStrategy:
+      type: object
+      required: [projectName, client, provider, preparedAt, operatingPrinciple, sourceDocument, totalInvestmentUf, regulatoryDeadline, timelineAlignmentNote, goals, agents, phases]
+      properties:
+        projectName: { type: string }
+        client: { type: string }
+        provider: { type: string }
+        preparedAt: { type: string }
+        operatingPrinciple: { type: string }
+        sourceDocument: { type: string }
+        totalInvestmentUf: { type: number }
+        regulatoryDeadline: { type: string }
+        timelineAlignmentNote: { type: string }
+        goals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProposalGoal"
+        agents:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProposalAgent"
+        phases:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProposalPhase"
+
