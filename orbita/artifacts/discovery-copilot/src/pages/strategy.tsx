@@ -15,6 +15,8 @@ import {
   DollarSign, Target, Briefcase, Zap, AlertCircle, FileText, Activity 
 } from "lucide-react"
 
+import { BaseCompanyProcess } from "@/components/strategy/base-company-process"
+
 function formatCalendarDate(value: string) {
   const [year, month, day] = value.split("-").map(Number)
   return new Intl.DateTimeFormat("en-US", {
@@ -278,6 +280,11 @@ export default function Strategy() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Base Company Process */}
+      <div className="pt-2 pb-4">
+        <BaseCompanyProcess />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
